@@ -1,4 +1,18 @@
-# gqlgenc
+# Changes
+
+support many queries and mutations without operation names as we designed the queries from the client side 
+very useful for dgraph 
+
+usecase: 
+1. run dgraph
+2. create graphql schema for dgraph database (dgraph generates many queries and mutations related to your schema)
+3. create client custom queries and mutations 
+4. generate client go graphql code that works with dgraph
+
+Goal: 
+- auto generate code needed to do all the database communications
+
+# Content from gqlgenc
 
 ## What is gqlgenc ?
 
