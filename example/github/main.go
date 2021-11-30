@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Yamashou/gqlgenc/client"
-	"github.com/Yamashou/gqlgenc/clientv2"
-	"github.com/Yamashou/gqlgenc/example/github/gen"
+	"github.com/mariospas/gqlgenc/client"
+	"github.com/mariospas/gqlgenc/clientv2"
+	"github.com/mariospas/gqlgenc/example/github/gen"
 )
 
 func main() {
