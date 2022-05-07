@@ -485,7 +485,6 @@ func TestUnmarshalGraphQL_jsonRawMessage(t *testing.T) {
 		"number": 1,
 		"string": "normal string"
 	}`), &got)
-
 	if err != nil {
 		t.Fatal(err)
 	}
