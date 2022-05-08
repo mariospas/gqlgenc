@@ -121,6 +121,8 @@ func (c *Client) Post(ctx context.Context, operationName, query string, respData
 	if err != nil {
 		return fmt.Errorf("encode: %w", err)
 	}
+	strRequest := fmt.Sprintf("%s", requestBody)
+	logrus.WithField("reqBody", strRequest).Debug("request to graphql")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL, bytes.NewBuffer(requestBody))
 	if err != nil {
@@ -141,19 +143,13 @@ func (c *Client) do(_ context.Context, req *http.Request, _ *GQLRequestInfo, res
 	}
 	defer resp.Body.Close()
 
-	bodyRequest, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read request body: %w", err)
-	}
-	strRequest := fmt.Sprintf("%s", bodyRequest)
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 	str := fmt.Sprintf("%s", body)
 
-	logrus.WithField("reqBody", strRequest).WithField("respBody", str).Debug("response from graphql request")
+	logrus.WithField("respBody", str).Debug("response from graphql request")
 
 	return parseResponse(body, resp.StatusCode, res)
 }
