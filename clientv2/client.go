@@ -141,12 +141,19 @@ func (c *Client) do(_ context.Context, req *http.Request, _ *GQLRequestInfo, res
 	}
 	defer resp.Body.Close()
 
+	bodyRequest, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read request body: %w", err)
+	}
+	strRequest := fmt.Sprintf("%s", bodyRequest)
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 	str := fmt.Sprintf("%s", body)
-	logrus.WithField("body", str).Debug("response from graphql request")
+
+	logrus.WithField("reqBody", strRequest).WithField("respBody", str).Debug("response from graphql request")
 
 	return parseResponse(body, resp.StatusCode, res)
 }
