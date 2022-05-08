@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/http/httputil"
 
 	"github.com/mariospas/gqlgenc/graphqljson"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -121,8 +123,6 @@ func (c *Client) Post(ctx context.Context, operationName, query string, respData
 	if err != nil {
 		return fmt.Errorf("encode: %w", err)
 	}
-	strRequest := fmt.Sprintf("%s", requestBody)
-	logrus.WithField("reqBody", strRequest).Debug("request to graphql")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL, bytes.NewBuffer(requestBody))
 	if err != nil {
@@ -137,6 +137,14 @@ func (c *Client) Post(ctx context.Context, operationName, query string, respData
 }
 
 func (c *Client) do(_ context.Context, req *http.Request, _ *GQLRequestInfo, res interface{}) error {
+	dump, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		log.Fatal(err)
+	}
+	strRequest := fmt.Sprintf("%s", dump)
+	logrus.WithField("reqBody", strRequest).Debug("request to graphql")
+
+
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
