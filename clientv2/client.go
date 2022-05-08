@@ -10,6 +10,7 @@ import (
 
 	"github.com/mariospas/gqlgenc/graphqljson"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"github.com/sirupsen/logrus"
 )
 
 type GQLRequestInfo struct {
@@ -144,6 +145,8 @@ func (c *Client) do(_ context.Context, req *http.Request, _ *GQLRequestInfo, res
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
+	str := fmt.Sprintf("%s", body)
+	logrus.WithField("body", str).Debug("response from graphql request")
 
 	return parseResponse(body, resp.StatusCode, res)
 }
