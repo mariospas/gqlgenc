@@ -7,17 +7,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mime/multipart"
-	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/http/httputil"
 	"strconv"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/mariospas/gqlgenc/graphqljson"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/sirupsen/logrus"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 type GQLRequestInfo struct {
@@ -309,7 +308,6 @@ func (c *Client) do(_ context.Context, req *http.Request, _ *GQLRequestInfo, res
 	}
 	strRequest := fmt.Sprintf("%s", dump)
 	logrus.WithField("reqBody", strRequest).Debug("request to graphql")
-
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
