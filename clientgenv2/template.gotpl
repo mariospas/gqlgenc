@@ -4,7 +4,6 @@
 	{{ reserveImport "encoding/json" }}
 	{{ reserveImport "fmt" }}
 	{{ reserveImport "io" }}
-	{{ reserveImport "io/ioutil" }}
 	{{ reserveImport "net/http" }}
 	{{ reserveImport "net/url" }}
 	{{ reserveImport "path" }}
@@ -27,8 +26,8 @@
 	    Client *clientv2.Client
 	}
 
-    func NewClient(cli *http.Client, baseURL string, interceptors ...clientv2.RequestInterceptor) {{- if .ClientInterfaceName }} {{ .ClientInterfaceName }} {{- else }} *Client {{- end }} {
-        return &Client{Client: clientv2.NewClient(cli, baseURL, interceptors...)}
+    func NewClient(cli *http.Client, baseURL string, options *clientv2.Options, interceptors ...clientv2.RequestInterceptor) {{- if .ClientInterfaceName }} {{ .ClientInterfaceName }} {{- else }} *Client {{- end }} {
+        return &Client{Client: clientv2.NewClient(cli, baseURL, options, interceptors...)}
     }
 
 {{- end }}
@@ -41,14 +40,20 @@ type {{ .Query.Name | go }} {{ .Query.Type | ref }}
 
 {{- range $name, $element := .Fragment }}
 	type  {{ .Name | go  }} {{ .Type | ref }}
+
+    {{ genGetters (.Name|go) .Type }}
 {{- end }}
 
 {{- range $name, $element := .StructSources }}
 	type {{ .Name }} {{ .Type | ref }}
+
+    {{ genGetters .Name .Type }}
 {{- end}}
 
 {{- range $name, $element := .OperationResponse }}
 	type  {{ .Name | go  }} {{ .Type | ref }}
+
+    {{ genGetters (.Name|go) .Type }}
 {{- end }}
 
 {{- range $model := .Operation}}
@@ -65,6 +70,8 @@ type {{ .Query.Name | go }} {{ .Query.Type | ref }}
 			var res {{ $model.ResponseStructName | go }}
 			if err := c.Client.Post(ctx, "", {{ $model.Name|go }}Document, &res, vars, interceptors...); err != nil {
 				return nil, err
+			if err := c.Client.Post(ctx, "", {{ $model.Name|go }}Document, &res, vars, interceptors...); err != nil {
+				return &res, err
 			}
 
 			return &res, nil

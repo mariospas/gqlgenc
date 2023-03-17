@@ -3,6 +3,7 @@ package generator
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/99designs/gqlgen/api"
 	"github.com/99designs/gqlgen/plugin"
@@ -16,7 +17,7 @@ func mutateHook(cfg *config.Config) func(b *modelgen.ModelBuild) *modelgen.Model
 	return func(build *modelgen.ModelBuild) *modelgen.ModelBuild {
 		for _, model := range build.Models {
 			// only handle input type model
-			if schemaModel, ok := cfg.GQLConfig.Schema.Types[model.Name]; ok && schemaModel.IsInputType() {
+			if schemaModel, ok := cfg.GQLConfig.Schema.Types[model.Name]; ok && (schemaModel.IsInputType() || cfg.Generate.ShouldOmitEmptyTypes()) {
 				for _, field := range model.Fields {
 					// find field in graphql schema
 					for _, def := range schemaModel.Fields {
@@ -25,12 +26,14 @@ func mutateHook(cfg *config.Config) func(b *modelgen.ModelBuild) *modelgen.Model
 							if !def.Type.NonNull {
 								field.Tag = `json:"` + field.Name + `,omitempty"`
 							}
+
 							break
 						}
 					}
 				}
 			}
 		}
+
 		return build
 	}
 }
@@ -53,6 +56,12 @@ func Generate(ctx context.Context, cfg *config.Config, option ...api.Option) err
 
 	if err := cfg.GQLConfig.Init(); err != nil {
 		return fmt.Errorf("generating core failed: %w", err)
+	}
+
+	// sort Implements to ensure a deterministic output
+	for _, v := range cfg.GQLConfig.Schema.Implements {
+		v := v
+		sort.Slice(v, func(i, j int) bool { return v[i].Name < v[j].Name })
 	}
 
 	for _, p := range plugins {

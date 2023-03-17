@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -51,17 +50,12 @@ func (a StringList) Has(file string) bool {
 	return false
 }
 
-// LoadConfigFromDefaultLocations looks for a config file in the current directory, and all parent directories
+// LoadConfigFromDefaultLocations looks for a config file in the specified directory, and all parent directories
 // walking up the tree. The closest config file will be returned.
-func LoadConfigFromDefaultLocations() (*Config, error) {
-	cfgFile, err := findCfg()
+func LoadConfigFromDefaultLocations(dir string) (*Config, error) {
+	cfgFile, err := findCfg(dir)
 	if err != nil {
 		return nil, err
-	}
-
-	err = os.Chdir(filepath.Dir(cfgFile))
-	if err != nil {
-		return nil, fmt.Errorf("unable to enter config dir: %w", err)
 	}
 
 	return LoadConfig(cfgFile)
@@ -75,10 +69,17 @@ type EndPointConfig struct {
 
 // findCfg searches for the config file in this directory and all parents up the tree
 // looking for the closest match
-func findCfg() (string, error) {
-	dir, err := os.Getwd()
+func findCfg(path string) (string, error) {
+	var err error
+	var dir string
+	if path == "." {
+		dir, err = os.Getwd()
+	} else {
+		dir = path
+		_, err = os.Stat(dir)
+	}
 	if err != nil {
-		return "", fmt.Errorf("unable to get working dir to findCfg: %w", err)
+		return "", fmt.Errorf("unable to get directory \"%s\" to findCfg: %w", dir, err)
 	}
 
 	cfg := findCfgInDir(dir)
@@ -116,7 +117,7 @@ var path2regex = strings.NewReplacer(
 // LoadConfig loads and parses the config gqlgenc config
 func LoadConfig(filename string) (*Config, error) {
 	var cfg Config
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read config: %w", err)
 	}
@@ -188,7 +189,7 @@ func LoadConfig(filename string) (*Config, error) {
 		filename = filepath.ToSlash(filename)
 		var err error
 		var schemaRaw []byte
-		schemaRaw, err = ioutil.ReadFile(filename)
+		schemaRaw, err = os.ReadFile(filename)
 		if err != nil {
 			return nil, fmt.Errorf("unable to open schema: %w", err)
 		}
@@ -269,7 +270,7 @@ func (c *Config) loadRemoteSchema(ctx context.Context) (*ast.Schema, error) {
 func (c *Config) loadLocalSchema() (*ast.Schema, error) {
 	schema, err := gqlparser.LoadSchema(c.GQLConfig.Sources...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("loadLocalSchema: %w", err)
 	}
 
 	return schema, nil
@@ -281,6 +282,7 @@ type GenerateConfig struct {
 	UnamedPattern       string        `yaml:"unamedPattern,omitempty"`
 	Client              *bool         `yaml:"client,omitempty"`
 	ClientInterfaceName *string       `yaml:"clientInterfaceName,omitempty"`
+	OmitEmptyTypes      *bool         `yaml:"omitEmptyTypes,omitempty"`
 	// if true, used client v2 in generate code
 	ClientV2 bool `yaml:"clientV2,omitempty"`
 }
@@ -295,6 +297,18 @@ func (c *GenerateConfig) ShouldGenerateClient() bool {
 	}
 
 	return true
+}
+
+func (c *GenerateConfig) ShouldOmitEmptyTypes() bool {
+	if c == nil {
+		return false
+	}
+
+	if c.OmitEmptyTypes != nil && *c.OmitEmptyTypes {
+		return true
+	}
+
+	return false
 }
 
 func (c *GenerateConfig) GetClientInterfaceName() *string {
