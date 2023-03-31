@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httputil"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/mariospas/gqlgenc/graphqljson"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
@@ -304,7 +304,7 @@ func prepareMultipartFormBody(
 func (c *Client) do(_ context.Context, req *http.Request, _ *GQLRequestInfo, res interface{}) error {
 	dump, err := httputil.DumpRequestOut(req, true)
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "failed to dump request gql gen")
 	}
 	strRequest := fmt.Sprintf("%s", dump)
 	logrus.WithField("reqBody", strRequest).Debug("request to graphql")
